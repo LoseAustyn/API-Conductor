@@ -1,0 +1,12 @@
+id: name
+title:
+  en: ""
+  zh-CN: ""
+description:
+  en: ""
+  zh-CN: ""
+version: 1.0.0
+sdk: 0.0.1
+author: Developer
+tags:
+  - "new plugin"

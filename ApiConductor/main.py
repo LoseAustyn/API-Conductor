@@ -1,9 +1,15 @@
 import argparse
-from apiConductor import version
+from generator import generate
+from tools import Log
+
+version = "0.0.1"
 
 
 def cmdline():
     #   创建命令行解析对象
+
+    #   初始化日志系统
+    Log()
 
     description = f"""
 #   -h, --help              查看帮助信息
@@ -41,7 +47,8 @@ def cmdline():
     args = parser.parse_args()
 
     if args.generate:
-        ...
+        file_path = args.generate[0]
+        generate(file_path)
 
     elif args.http:
         ...
