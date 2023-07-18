@@ -8,6 +8,13 @@ class Log:
     def __init__(self):
         """
         初始化日志系统
+        使用以下静态方法进行日志输出:
+            debug
+            info
+            attention
+            warning
+            error
+            critical
         """
         #   配置日志
         logging.basicConfig(level=logging.DEBUG, format="")
@@ -42,3 +49,4 @@ class Log:
     @staticmethod
     def critical(msg):
         logging.critical("\033[91m" + f"CRITICAL | {msg}" + "\033[0m")
+pip
