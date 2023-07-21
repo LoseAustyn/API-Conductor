@@ -49,4 +49,3 @@ class Log:
     @staticmethod
     def critical(msg):
         logging.critical("\033[91m" + f"CRITICAL | {msg}" + "\033[0m")
-pip

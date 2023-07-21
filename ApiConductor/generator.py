@@ -4,13 +4,14 @@ import traceback
 import shutil
 from typing import Any
 import jinja2
+from templates import *
 
 _types_dict = {
     "string": "str",
     "bytes": "str",
     "boolean": "bool",
     "float": "float",
-    "object": "dict",
+    "map": "dict",
     "integer": "int",
     "any": "Any"
 }
@@ -31,8 +32,16 @@ def generate(file_path: str):
     #   生成基础文件
     generate_base_file()
 
-    #   生成自定义类
-    types_model = generate_types_model()
+    #   生成自定义类校验数据
+    types_model = generate_types_model(plugin_data.get("types"))
+
+    #   生成环境校验数据
+    env_model = generate_envs_model(plugin_data.get("envs"))
+
+    #   生成API校验数据
+    api_model = generate_apis_model(plugin_data.get("apis"))
+
+    
 
 
 def read_generate_file(file_path: str) -> dict:
@@ -117,8 +126,8 @@ def data_check(data: dict):
         if not data.get(key):
             error += f"{key}\n"
 
-        if error:
-            raise Exception(f"插件定义文件中缺失必要参数：\n {error}")
+    if error:
+        raise Exception(f"插件定义文件中缺失必要参数：\n {error}")
 
     if not data["id"].islower():
         raise Exception(f"插件ID应该为全小写：{data['id']}")
@@ -172,11 +181,11 @@ def generate_base_file():
     Log.info("基础文件生成完成")
 
 
-def generate_types_model(types: list) -> str:
+def generate_types_model(types: dict) -> str:
     """
-    根据插件定义文件中types参数生成自定义类型的校验模型
+    根据插件定义文件中types参数生成自定义类的校验模型
     Args:
-        types: 自定义类型列表
+        types: 自定义类型字典
 
     Returns:
         types_model: 自定义类型的校验模型，需要在models.py文件中写入
@@ -190,26 +199,104 @@ def generate_types_model(types: list) -> str:
         Log.attention("未检测到自定义类型，跳过自定义类型校验数据的生成")
         return types_model
 
-    for type_ in types:
-        Log.info(f"生成 {type_['id']} 类型校验数据中")
+    for type_ in types.keys():
+        Log.info(f"生成 {type_} 类型校验数据中")
 
         _types_dict[type_] = type_.upper()
 
         type_data = {
             #   类名采用全大写
-            "class_name": type_["id"].upper(),
+            "class_name": type_.upper(),
             #   对类的构成参数进行打包
-            "args": args_setup(type_["args"])
+            "args": args_setup(types[type_]["args"])
         }
 
-        types_model += render_string(type_data)
+        types_model += render_string(type_data, model_template)
+
+        Log.info(f"{type_} 类型校验数据生成完成")
+
+    Log.info("自定义类型（types）校验数据生成完成")
+
+    return types_model
 
 
-def args_setup(args: list) -> list:
+def generate_envs_model(envs: dict) -> str:
+    """
+    根据插件定义文件中envs参数生成环境变量的校验模型
+    Args:
+        envs: 环境
+
+    Returns:
+        envs_model: 环境变量的校验模型，需要在models.py文件中写入
+
+    """
+
+    envs_model = ""
+
+    if not envs:
+        Log.attention("未检测到环境配置，跳过环境校验数据的生成")
+        return envs_model
+
+    for env in envs.keys():
+        Log.info(f"生成 {env} 环境校验数据中")
+
+        env_data = {
+            #   类名采用全大写
+            "class_name": env.upper() + "_ENV",
+            #   对构成参数进行打包
+            "args": args_setup(envs[env]["args"])
+        }
+
+        envs_model += render_string(env_data, model_template)
+
+        Log.info(f"{env} 环境校验数据生成完成")
+
+    Log.info("环境（envs）校验数据生成完成")
+
+    return envs_model
+
+
+def generate_apis_model(apis: dict) -> str:
+    """
+    根据插件定义文件中apis生成入参和出参的校验模型
+    Args:
+        apis: 接口
+
+    Returns:
+        apis_model: 接口的校验模型，需要在models.py文件中写入
+    """
+
+    apis_model = ""
+
+    if not apis:
+        Log.attention("未检测到接口配置，跳过接口校验数据的生成")
+        return apis_model
+
+    for api in apis.keys():
+        Log.info("生成接口（api）校验数据中")
+
+        api_input_data = {
+            "class_name": api.upper() + "_API_INPUT",
+            "args": args_setup(apis[api]["input"]),
+        }
+
+        api_output_data = {
+            "class_name": api.upper() + "_API_OUTPUT",
+            "args": args_setup(apis[api]["output"]),
+        }
+
+        apis_model = render_string(api_input_data, model_template) + render_string(api_output_data, model_template)
+
+    Log.info("环境（envs）校验数据生成完成")
+
+    return apis_model
+
+
+def args_setup(args: dict) -> list:
     """
     将参数格式化用于生成models
     Args:
-        args: 参数列表
+        args: 参数字典
 
     Returns:
         args_list: 格式化后参数列表
@@ -222,13 +309,12 @@ def args_setup(args: list) -> list:
         return args_list
 
     #   提取一个参数的属性
-    for arg in args:
+    for arg_id, arg_property in args.items():
         #   从参数中获取关键信息
-        arg_id = arg["id"]
-        arg_type = arg.get("type")
-        arg_required = arg.get("required", False)
-        arg_default = arg.get("default")
-        arg_enum = arg.get("enum")
+        arg_type = arg_property.get("type")
+        arg_required = arg_property.get("required", False)
+        arg_default = arg_property.get("default")
+        arg_enum = arg_property.get("enum")
 
         #   校验参数的属性是否符合规范
         arg_check(arg_id, arg_type, arg_default, arg_enum)
@@ -269,7 +355,7 @@ def arg_check(arg_id: str, arg_type: str, arg_default: Any, arg_enum: list):
     if arg_default and arg_enum and arg_default not in arg_enum:
         raise Exception(f"默认值 {arg_default}\n无法在枚举的集合中找到")
 
-    if not arg_enum:
+    if arg_enum is []:
         raise Exception("枚举集合为空")
 
     Log.debug(f"{arg_id}的属性校验通过")
@@ -288,8 +374,6 @@ def type_transform(arg_type: str, arg_required: bool, arg_default: Any, arg_enum
         arg_type_limit: 参数的验证typing信息
 
     """
-
-    arg_type_limit = ""
 
     #   存在枚举值时，限制输入参数只能从枚举的值中选择
     if arg_enum:
