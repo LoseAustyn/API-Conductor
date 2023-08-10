@@ -32,16 +32,20 @@ def generate(file_path: str):
     #   生成基础文件
     generate_base_file()
 
+    #   生成环境初始化文件
+    generate_init_files(plugin_data.get("apis"))
+
     #   生成自定义类校验数据
     types_model = generate_types_model(plugin_data.get("types"))
 
     #   生成环境校验数据
     env_model = generate_envs_model(plugin_data.get("envs"))
 
-    #   生成API校验数据
+    #   生成接口校验数据
     api_model = generate_apis_model(plugin_data.get("apis"))
 
-    
+    #   生成校验文件
+    generate_models_files(types_model, env_model, api_model)
 
 
 def read_generate_file(file_path: str) -> dict:
@@ -181,6 +185,39 @@ def generate_base_file():
     Log.info("基础文件生成完成")
 
 
+def generate_init_files(envs: dict, apis: dict):
+    """
+    生成初始化文件
+    Args:
+        apis: 接口
+        envs: 环境
+
+    """
+    Log.info("生成初始化文件中")
+
+    work_path = os.getcwd()
+
+    envs_path = os.path.join(work_path, "envs")
+    if not os.path.exists(envs_path):
+        os.mkdir(envs_path)
+
+    apis_path = os.path.join(work_path, "apis")
+    if not os.path.exists(apis_path):
+        os.mkdir(apis_path)
+
+    if envs and type(envs) == dict:
+        envs_data = {
+            "init_list": [(env, env.upper() + "_ENV") for env in envs.keys()]
+        }
+        render_string(envs_data, init_template)
+
+    if apis and type(apis) == dict:
+        apis_list = {
+            "init_list": [(api, api.upper() + "_ENV") for api in apis.keys()]
+        }
+        render_string(apis_list, init_template)
+
+
 def generate_types_model(types: dict) -> str:
     """
     根据插件定义文件中types参数生成自定义类的校验模型
@@ -242,7 +279,7 @@ def generate_envs_model(envs: dict) -> str:
 
         env_data = {
             #   类名采用全大写
-            "class_name": env.upper() + "_ENV",
+            "class_name": env.upper() + "_ENV_ARGS",
             #   对构成参数进行打包
             "args": args_setup(envs[env]["args"])
         }
@@ -275,21 +312,50 @@ def generate_apis_model(apis: dict) -> str:
     for api in apis.keys():
         Log.info("生成接口（api）校验数据中")
 
+        #   输入参数
         api_input_data = {
             "class_name": api.upper() + "_API_INPUT",
             "args": args_setup(apis[api]["input"]),
         }
 
+        #   输出参数
         api_output_data = {
             "class_name": api.upper() + "_API_OUTPUT",
             "args": args_setup(apis[api]["output"]),
         }
 
-        apis_model = render_string(api_input_data, model_template) + render_string(api_output_data, model_template)
+        apis_model = render_string(api_input_data, model_template) + \
+                     render_string(api_output_data, model_template)
 
-    Log.info("环境（envs）校验数据生成完成")
+    Log.info("接口（apis）校验数据生成完成")
 
     return apis_model
+
+
+def generate_models_files(types_model: str, env_model: str, api_model: str):
+    """
+    生成校验文件
+    Args:
+        types_model: 自定义类校验数据
+        env_model: 环境校验数据
+        api_model: API校验数据
+
+    """
+    Log.info("生成校验文件中")
+
+    work_path = os.getcwd()
+
+    if env_model:
+        envs_path = os.path.join(work_path, "envs")
+        with open(envs_path, "w", encoding="utf-8", newline="\n") as file:
+            file.write(model_header_template + types_model + env_model)
+
+    if api_model:
+        apis_path = os.path.join(work_path, "apis")
+        with open(apis_path, "w", encoding="utf-8", newline="\n") as file:
+            file.write(model_header_template + types_model + api_model)
+
+    Log.info("校验文件生成完成")
 
 
 def args_setup(args: dict) -> list:
