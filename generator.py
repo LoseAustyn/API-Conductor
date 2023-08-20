@@ -1,3 +1,5 @@
+import os
+
 from tools import *
 import yaml
 import traceback
@@ -6,6 +8,7 @@ from typing import Any
 import jinja2
 from templates import *
 
+#   预设类型
 _types_dict = {
     "string": "str",
     "bytes": "str",
@@ -28,24 +31,37 @@ def generate(file_path: str):
 
     #   读取插件定义文件
     plugin_data = read_generate_file(file_path)
+    types_data = plugin_data.get("types")
+    envs_data = plugin_data.get("envs")
+    apis_data = plugin_data.get("apis")
 
     #   生成基础文件
     generate_base_file()
 
     #   生成环境初始化文件
-    generate_init_files(plugin_data.get("apis"))
+    generate_envs_init_files(envs_data)
+
+    #   生成接口初始化文件
+    generate_apis_init_files(apis_data)
 
     #   生成自定义类校验数据
-    types_model = generate_types_model(plugin_data.get("types"))
+    types_model = generate_types_model(types_data)
 
     #   生成环境校验数据
-    env_model = generate_envs_model(plugin_data.get("envs"))
+    env_model = generate_envs_model(envs_data)
 
     #   生成接口校验数据
-    api_model = generate_apis_model(plugin_data.get("apis"))
+    api_model = generate_apis_model(apis_data)
 
     #   生成校验文件
-    generate_models_files(types_model, env_model, api_model)
+    generate_envs_models_files(types_model, env_model)
+    generate_apis_models_files(types_model, api_model)
+
+    generate_envs_files(envs_data)
+
+    generate_apis_files(apis_data)
+
+
 
 
 def read_generate_file(file_path: str) -> dict:
@@ -185,37 +201,67 @@ def generate_base_file():
     Log.info("基础文件生成完成")
 
 
-def generate_init_files(envs: dict, apis: dict):
+def generate_envs_init_files(envs: dict):
     """
     生成初始化文件
     Args:
-        apis: 接口
+
         envs: 环境
 
     """
-    Log.info("生成初始化文件中")
 
     work_path = os.getcwd()
 
-    envs_path = os.path.join(work_path, "envs")
-    if not os.path.exists(envs_path):
-        os.mkdir(envs_path)
-
-    apis_path = os.path.join(work_path, "apis")
-    if not os.path.exists(apis_path):
-        os.mkdir(apis_path)
-
     if envs and type(envs) == dict:
+
+        Log.info("生成环境初始化文件中")
+
+        envs_path = os.path.join(work_path, "envs")
+        if not os.path.exists(envs_path):
+            os.mkdir(envs_path)
+
         envs_data = {
             "init_list": [(env, env.upper() + "_ENV") for env in envs.keys()]
         }
-        render_string(envs_data, init_template)
+        init_file = render_string(envs_data, init_template)
+
+        with open(os.path.join(envs_path, "__init__.py"), "w", newline="\n", encoding="utf-8") as file:
+            file.write(init_file)
+
+    else:
+
+        Log.info("未检测到有环境数据，跳过环境初始化文件生成")
+
+
+def generate_apis_init_files(apis: dict):
+    """
+    生成APIs初始化文件
+    Args:
+        apis: 接口
+
+    """
+
+    work_path = os.getcwd()
 
     if apis and type(apis) == dict:
+
+        Log.info("生成接口初始化文件")
+
+        apis_path = os.path.join(work_path, "apis")
+        if not os.path.exists(apis_path):
+            os.mkdir(apis_path)
+
         apis_list = {
-            "init_list": [(api, api.upper() + "_ENV") for api in apis.keys()]
+            "init_list": [(api, api.upper() + "_API") for api in apis.keys()]
         }
-        render_string(apis_list, init_template)
+        init_file = render_string(apis_list, init_template)
+
+        with open(os.path.join(apis_path, "__init__.py"), "w", newline="\n", encoding="utf-8") as file:
+            file.write(init_file)
+
+    else:
+
+        Log.info("未检测到有接口数据，跳过接口初始化文件生成")
 
 
 def generate_types_model(types: dict) -> str:
@@ -332,30 +378,116 @@ def generate_apis_model(apis: dict) -> str:
     return apis_model
 
 
-def generate_models_files(types_model: str, env_model: str, api_model: str):
+def generate_envs_models_files(types_model: str, env_model: str):
     """
     生成校验文件
     Args:
         types_model: 自定义类校验数据
         env_model: 环境校验数据
-        api_model: API校验数据
 
     """
-    Log.info("生成校验文件中")
 
     work_path = os.getcwd()
 
     if env_model:
-        envs_path = os.path.join(work_path, "envs")
+        Log.info("生成环境校验文件中")
+
+        envs_path = os.path.join(work_path, "envs", "models.py")
         with open(envs_path, "w", encoding="utf-8", newline="\n") as file:
             file.write(model_header_template + types_model + env_model)
 
+        Log.info("环境校验文件生成完成")
+
+    else:
+        Log.info("不存在环境数据，已跳过环境校验文件生成")
+
+
+def generate_apis_models_files(types_model: str, api_model: str):
+    """
+    生成校验文件
+    Args:
+        types_model: 自定义类校验数据
+        api_model: 环境校验数据
+
+    """
+
+    work_path = os.getcwd()
+
     if api_model:
-        apis_path = os.path.join(work_path, "apis")
+        Log.info("生成接口校验文件中")
+
+        apis_path = os.path.join(work_path, "apis", "models.py")
         with open(apis_path, "w", encoding="utf-8", newline="\n") as file:
             file.write(model_header_template + types_model + api_model)
 
-    Log.info("校验文件生成完成")
+        Log.info("接口校验文件生成完成")
+
+    else:
+        Log.info("不存在接口数据，已跳过接口校验文件生成")
+
+
+def generate_envs_files(envs_data: dict):
+    """
+    生成环境py文件
+    Args:
+        envs_data: 环境数据
+
+    """
+
+    work_path = os.getcwd()
+
+    if envs_data:
+        Log.info("生成环境文件中")
+
+        for env_name, env_meta in envs_data.items():
+            env_data = {
+                "env_name": env_name,
+                "args": env_meta["args"].keys() if type(env_meta.get("args")) is dict else []
+            }
+
+            env_file = render_string(env_data, env_template)
+
+            env_path = os.path.join(work_path, "envs", f"{env_name}.py")
+
+            with open(env_path, "w", newline="\n", encoding="utf-8") as file:
+                file.write(env_file)
+
+            Log.info(f"{env_name}.py 生成完成")
+
+    else:
+        Log.info("不存在环境数据，已跳过环境文件生成")
+
+
+def generate_apis_files(apis_data: dict):
+    """
+    生成接口py文件
+    Args:
+        apis_data: 接口数据
+
+    """
+
+    work_path = os.getcwd()
+
+    if apis_data:
+        Log.info("生成接口文件中")
+
+        for api_name, api_meta in apis_data.items():
+            api_data = {
+                "api_name": api_name,
+                "input": api_meta["input"].keys() if type(api_meta.get("input")) is dict else []
+            }
+
+            api_file = render_string(api_data, api_template)
+
+            api_path = os.path.join(work_path, "apis", f"{api_name}.py")
+
+            with open(api_path, "w", newline="\n", encoding="utf-8") as file:
+                file.write(api_file)
+
+            Log.info(f"{api_name}.py 生成完成")
+
+    else:
+        Log.info("不存在接口数据，已跳过接口文件生成")
 
 
 def args_setup(args: dict) -> list:
@@ -427,7 +559,7 @@ def arg_check(arg_id: str, arg_type: str, arg_default: Any, arg_enum: list):
     Log.debug(f"{arg_id}的属性校验通过")
 
 
-def type_transform(arg_type: str, arg_required: bool, arg_default: Any, arg_enum: list):
+def type_transform(arg_type: str, arg_required: bool, arg_default: Any, arg_enum: list) -> str:
     """
 
     Args:
@@ -463,7 +595,7 @@ def type_transform(arg_type: str, arg_required: bool, arg_default: Any, arg_enum
     return arg_type_limit
 
 
-def render_string(data: dict, template: str):
+def render_string(data: dict, template: str) -> str:
     """
     通过jinja2库渲染字符串
     Args:

@@ -25,12 +25,11 @@ class {{ env_name.upper() }}_ENV:
         \"\"\"
         self.env_name = "{{ env_name }}"
 
-        # 校验环境参数，不需要校验可以注释下面一行
+        #   校验环境参数，不需要校验可以注释下面一行
         args = check_model(args, {{ env_name.upper() }}_ENV_ARGS)
         
         {% if args %}{% for arg in args %}self.{{ arg }} = args.get("{{ arg }}")
         {% endfor %}{% endif %}
-        self.build()
 
     def build(self):
         \"\"\"
@@ -41,9 +40,36 @@ class {{ env_name.upper() }}_ENV:
         ...
 """
 
+api_template = """
+from models import {{ api_name.upper() }}_API_INPUT
+from models import {{ api_name.upper() }}_API_OUTPUT
+
+class {{ api_name.upper() }}_API:
+    def __init__(self, input: dict = {}):
+        \"\"\"
+        初始化接口
+        Args:
+            input: 输入参数构成的字典
+
+        \"\"\"
+        self.api_name = "{{ api_name }}"
+        
+        #   校验输入的参数，不需要校验可以注释下面一行
+        input = check_model(input, {{ api_name.upper() }}_API_INPUT)
+        
+        {% if input %}{% for arg in input %}self.{{ arg }} = input.get("{{ arg }}")
+        {% endfor %}{% endif %}
+        
+    def run(self):
+        \"\"\"
+        运行接口
+        \"\"\"
+        ...
+"""
+
+
 init_template = """
 {% for func_id, class_name in init_list %}
 from .{{ func_id }} import {{ class_name }}
 {% endfor %}
 """
-
