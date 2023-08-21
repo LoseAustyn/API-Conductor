@@ -9,7 +9,7 @@ import jinja2
 from templates import *
 
 #   预设类型
-_types_dict = {
+_types_dict_ = {
     "string": "str",
     "bytes": "str",
     "boolean": "bool",
@@ -57,9 +57,13 @@ def generate(file_path: str):
     generate_envs_models_files(types_model, env_model)
     generate_apis_models_files(types_model, api_model)
 
+    #   生成代码文件
     generate_envs_files(envs_data)
-
     generate_apis_files(apis_data)
+
+    
+
+
 
 
 
@@ -285,7 +289,7 @@ def generate_types_model(types: dict) -> str:
     for type_ in types.keys():
         Log.info(f"生成 {type_} 类型校验数据中")
 
-        _types_dict[type_] = type_.upper()
+        _types_dict_[type_] = type_.upper()
 
         type_data = {
             #   类名采用全大写
@@ -490,6 +494,16 @@ def generate_apis_files(apis_data: dict):
         Log.info("不存在接口数据，已跳过接口文件生成")
 
 
+def generate_main_file():
+    """
+    生成启动文件
+
+    """
+    Log.info()
+
+
+
+
 def args_setup(args: dict) -> list:
     """
     将参数格式化用于生成models
@@ -541,10 +555,10 @@ def arg_check(arg_id: str, arg_type: str, arg_default: Any, arg_enum: list):
     if not arg_type and not arg_enum:
         raise Exception(f"类型与枚举集合都为空\n类型（type）与枚举集合（enum）请至少填写一项")
 
-    if arg_type and not _types_dict.get(arg_type):
-        if arg_type.startswith("[]") and not _types_dict.get(arg_type[2:]):
+    if arg_type and not _types_dict_.get(arg_type):
+        if arg_type.startswith("[]") and not _types_dict_.get(arg_type[2:]):
             raise Exception(f"未知类型的列表组合：{arg_type}，如果存在自定义类型嵌套，请注意顺序")
-        elif not arg_type.startswith("[]") and not _types_dict.get(arg_type):
+        elif not arg_type.startswith("[]") and not _types_dict_.get(arg_type):
             raise Exception(f"未知的类型：{arg_type}，如果存在自定义类型嵌套，请注意顺序")
 
     if arg_enum and not isinstance(arg_enum, list):
@@ -578,10 +592,10 @@ def type_transform(arg_type: str, arg_required: bool, arg_default: Any, arg_enum
         arg_type_limit = f"Literal{arg_enum}"
 
     elif arg_type.startswith("[]"):
-        arg_type_limit = f"Optional[List[{_types_dict.get(arg_type)}]]"
+        arg_type_limit = f"Optional[List[{_types_dict_.get(arg_type)}]]"
 
     else:
-        arg_type_limit = _types_dict.get(arg_type)
+        arg_type_limit = _types_dict_.get(arg_type)
 
     if not arg_required and arg_default is None:
         arg_type_limit += " = None"

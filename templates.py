@@ -67,9 +67,18 @@ class {{ api_name.upper() }}_API:
         ...
 """
 
-
 init_template = """
 {% for func_id, class_name in init_list %}
 from .{{ func_id }} import {{ class_name }}
 {% endfor %}
+"""
+
+main_template = """
+from conductor.run import run
+
+def main():
+    run()
+    
+if __name__ == '__main__':
+    main()  
 """
