@@ -22,7 +22,9 @@ _types_dict_ = {
 
 def generate(file_path: str):
     """
+
     生成插件
+
     Args:
         file_path: yaml文件目录
 
@@ -61,16 +63,15 @@ def generate(file_path: str):
     generate_envs_files(envs_data)
     generate_apis_files(apis_data)
 
-    
-
-
-
-
+    #   生成启动文件
+    generate_main_file()
 
 
 def read_generate_file(file_path: str) -> dict:
     """
+
     读取插件定义文件
+
     Args:
         file_path:  yaml文件目录
 
@@ -112,7 +113,9 @@ def read_generate_file(file_path: str) -> dict:
 
 def path_check(file_path: str):
     """
+
     插件路径检测
+
     Args:
         file_path:  yaml文件目录
 
@@ -130,7 +133,9 @@ def path_check(file_path: str):
 
 def data_check(data: dict):
     """
+
     插件元数据验证
+
     Args:
         data: 插件定义数据
 
@@ -167,6 +172,7 @@ def data_check(data: dict):
 
 def generate_base_file():
     """
+
     生成插件的基础文件
 
     """
@@ -207,7 +213,9 @@ def generate_base_file():
 
 def generate_envs_init_files(envs: dict):
     """
+
     生成初始化文件
+
     Args:
 
         envs: 环境
@@ -239,7 +247,9 @@ def generate_envs_init_files(envs: dict):
 
 def generate_apis_init_files(apis: dict):
     """
+
     生成APIs初始化文件
+
     Args:
         apis: 接口
 
@@ -270,7 +280,9 @@ def generate_apis_init_files(apis: dict):
 
 def generate_types_model(types: dict) -> str:
     """
+
     根据插件定义文件中types参数生成自定义类的校验模型
+
     Args:
         types: 自定义类型字典
 
@@ -309,7 +321,9 @@ def generate_types_model(types: dict) -> str:
 
 def generate_envs_model(envs: dict) -> str:
     """
+
     根据插件定义文件中envs参数生成环境变量的校验模型
+
     Args:
         envs: 环境
 
@@ -345,7 +359,9 @@ def generate_envs_model(envs: dict) -> str:
 
 def generate_apis_model(apis: dict) -> str:
     """
+
     根据插件定义文件中apis生成入参和出参的校验模型
+
     Args:
         apis: 接口
 
@@ -384,7 +400,9 @@ def generate_apis_model(apis: dict) -> str:
 
 def generate_envs_models_files(types_model: str, env_model: str):
     """
+
     生成校验文件
+
     Args:
         types_model: 自定义类校验数据
         env_model: 环境校验数据
@@ -408,7 +426,9 @@ def generate_envs_models_files(types_model: str, env_model: str):
 
 def generate_apis_models_files(types_model: str, api_model: str):
     """
+
     生成校验文件
+
     Args:
         types_model: 自定义类校验数据
         api_model: 环境校验数据
@@ -432,7 +452,9 @@ def generate_apis_models_files(types_model: str, api_model: str):
 
 def generate_envs_files(envs_data: dict):
     """
+
     生成环境py文件
+
     Args:
         envs_data: 环境数据
 
@@ -464,7 +486,9 @@ def generate_envs_files(envs_data: dict):
 
 def generate_apis_files(apis_data: dict):
     """
+
     生成接口py文件
+
     Args:
         apis_data: 接口数据
 
@@ -496,17 +520,28 @@ def generate_apis_files(apis_data: dict):
 
 def generate_main_file():
     """
+
     生成启动文件
 
     """
-    Log.info()
 
+    work_path = os.getcwd()
 
+    Log.info("生成启动文件中")
+
+    main_path = os.path.join(work_path, "main.py")
+
+    with open(main_path, "w", encoding="uft-8", newline="\n") as file:
+        file.write(main_template)
+
+    Log.info("生成启动文件完成")
 
 
 def args_setup(args: dict) -> list:
     """
+
     将参数格式化用于生成models
+
     Args:
         args: 参数字典
 
@@ -541,7 +576,9 @@ def args_setup(args: dict) -> list:
 
 def arg_check(arg_id: str, arg_type: str, arg_default: Any, arg_enum: list):
     """
+
     校验参数的属性是否符合规范
+
     Args:
         arg_id: 参数id
         arg_type: 参数类型
@@ -575,6 +612,8 @@ def arg_check(arg_id: str, arg_type: str, arg_default: Any, arg_enum: list):
 
 def type_transform(arg_type: str, arg_required: bool, arg_default: Any, arg_enum: list) -> str:
     """
+
+    根据yaml中填入的类型生成models中的类型验证
 
     Args:
         arg_type: 参数类型
@@ -611,7 +650,9 @@ def type_transform(arg_type: str, arg_required: bool, arg_default: Any, arg_enum
 
 def render_string(data: dict, template: str) -> str:
     """
+
     通过jinja2库渲染字符串
+
     Args:
         data: 渲染用的数据
         template: 渲染的模板

@@ -1,5 +1,3 @@
-#   用于放置各种需要使用的方法
-
 import os
 import logging
 import time
