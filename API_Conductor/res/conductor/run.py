@@ -1,9 +1,9 @@
 import sys
-from tools import Log
+from API_Conductor.res.conductor.tools import Log
 from api import run_server
 
 
-def run(host, port):
+def run():
     """
     启动插件
     """
@@ -20,3 +20,5 @@ def run(host, port):
         port = 18024
 
     run_server(host, port)
+
+    

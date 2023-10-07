@@ -1,6 +1,6 @@
 import argparse
-from generator import generate
-from tools import Log
+from .generator import generate
+from .tools import Log
 
 version = "0.0.1"
 
@@ -56,6 +56,9 @@ def cmdline():
 
     elif args.http:
         ...
+
+    else:
+        pass
 
 
 if __name__ == "__main__":

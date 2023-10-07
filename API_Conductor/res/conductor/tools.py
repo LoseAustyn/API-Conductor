@@ -18,7 +18,7 @@ class Log:
             critical
         """
         #   配置日志
-        logging.basicConfig(level=logging.DEBUG, format="")
+        logging.basicConfig(level=logging.ERROR, format="")
         #   输出带颜色log可能需要执行一次os.system("")
         os.system("")
 
